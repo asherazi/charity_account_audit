@@ -1,0 +1,395 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>Charity Ad Account Audit</title>
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600&family=Syne:wght@700;800&display=swap" rel="stylesheet"/>
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+  body { background: #f6f6f4; font-family: 'DM Sans', sans-serif; padding: 32px 16px 80px; color: #111; min-height: 100vh; }
+  #app { max-width: 700px; margin: 0 auto; }
+  .label { font-size: 10.5px; font-weight: 600; letter-spacing: 0.14em; color: #aaa; text-transform: uppercase; display: block; margin-bottom: 6px; }
+  #client-name { font-family: 'Syne', sans-serif; font-size: clamp(24px, 5vw, 36px); font-weight: 800; cursor: text; color: #111; border-bottom: 2px solid transparent; margin-bottom: 18px; display: inline-block; outline: none; background: transparent; border-left: none; border-right: none; border-top: none; width: 100%; }
+  #client-name:focus { border-bottom-color: #2A9D5C; }
+  .progress-row { display: flex; align-items: center; gap: 12px; margin-bottom: 10px; }
+  .progress-bar-wrap { flex: 1; height: 5px; background: #e2e2e2; border-radius: 99px; overflow: hidden; }
+  .progress-bar-fill { height: 100%; background: linear-gradient(90deg, #0096C7, #2A9D5C); border-radius: 99px; transition: width 0.4s ease; }
+  .progress-text { font-size: 11.5px; color: #aaa; white-space: nowrap; font-weight: 500; }
+  .btn-copy { font-size: 12px; font-weight: 600; color: white; background: #222; border: none; border-radius: 8px; padding: 7px 15px; cursor: pointer; white-space: nowrap; font-family: 'DM Sans', sans-serif; transition: background 0.2s; }
+  .btn-copy.copied { background: #2A9D5C; }
+  .btn-reset { font-size: 11px; color: #bbb; background: white; border: 1px solid #e0e0e0; border-radius: 8px; padding: 7px 12px; cursor: pointer; font-family: 'DM Sans', sans-serif; }
+  .hint { font-size: 11.5px; color: #bbb; margin-top: 10px; line-height: 1.5; }
+  .hint strong { color: #999; }
+  .category { background: white; border: 1px solid #ebebeb; border-radius: 14px; margin-bottom: 10px; overflow: hidden; box-shadow: 0 1px 3px rgba(0,0,0,0.04); }
+  .cat-header { display: flex; align-items: center; justify-content: space-between; padding: 13px 16px; cursor: pointer; user-select: none; border-bottom: 1px solid #f2f2f2; }
+  .cat-header.collapsed { border-bottom: none; }
+  .cat-left { display: flex; align-items: center; gap: 10px; }
+  .cat-icon { width: 30px; height: 30px; border-radius: 7px; display: flex; align-items: center; justify-content: center; font-size: 14px; }
+  .cat-label { font-weight: 600; font-size: 14px; color: #111; }
+  .na-badge { font-size: 10px; color: #bbb; background: #f5f5f5; border: 1px solid #eee; border-radius: 99px; padding: 1px 7px; font-weight: 600; }
+  .cat-right { display: flex; align-items: center; gap: 10px; }
+  .cat-count { font-size: 11.5px; font-weight: 600; color: #ccc; }
+  .cat-count.done { color: #2A9D5C; }
+  .cat-mini-bar-wrap { width: 48px; height: 4px; background: #f0f0f0; border-radius: 99px; overflow: hidden; }
+  .cat-mini-bar { height: 100%; border-radius: 99px; transition: width 0.3s ease; }
+  .chevron { transition: transform 0.2s; opacity: 0.2; }
+  .chevron.open { transform: rotate(180deg); }
+  .items-wrap { padding: 8px 8px 10px; }
+  .item { display: flex; align-items: flex-start; gap: 10px; padding: 8px 10px; border-radius: 8px; margin-bottom: 3px; transition: background 0.15s; }
+  .item.checked { background: #f0faf4; }
+  .item.na { background: #fafafa; }
+  .checkbox { width: 19px; height: 19px; border-radius: 5px; flex-shrink: 0; margin-top: 2px; cursor: pointer; display: flex; align-items: center; justify-content: center; border: 2px solid #ddd; background: white; transition: all 0.15s; }
+  .checkbox.checked { border-color: #2A9D5C; background: #2A9D5C; }
+  .checkbox.na { background: #f0f0f0; }
+  .checkbox svg { display: none; }
+  .checkbox.checked svg { display: block; }
+  .na-text { font-size: 7.5px; color: #bbb; font-weight: 700; display: none; }
+  .checkbox.na .na-text { display: block; }
+  .item-num { font-size: 11px; font-weight: 600; color: #ccc; flex-shrink: 0; margin-top: 3px; min-width: 18px; }
+  .item.checked .item-num { color: #ddd; }
+  .item.na .item-num { color: #e0e0e0; }
+  .item.checked .item-text { color: #aaa; text-decoration: line-through; }
+  .item.na .item-text { color: #ccc; text-decoration: line-through; }
+  .item-text.editing { display: none; }
+  .item-input { flex: 1; font-size: 13.5px; line-height: 1.55; font-family: 'DM Sans', sans-serif; border: 1.5px solid #0096C7; border-radius: 6px; padding: 5px 8px; resize: none; outline: none; background: #f8fdff; color: #111; min-height: 52px; display: none; }
+  .item-input.editing { display: block; }
+  footer { text-align: center; font-size: 11px; color: #ccc; margin-top: 24px; }
+</style>
+</head>
+<body>
+<div id="app">
+  <span class="label">Charity Ad Account Audit</span>
+  <input id="client-name" value="Client Name" placeholder="Client Name" spellcheck="false"/>
+  <div class="progress-row">
+    <div class="progress-bar-wrap"><div class="progress-bar-fill" id="progress-fill" style="width:0%"></div></div>
+    <span class="progress-text" id="progress-text">0/63 — 0%</span>
+    <button class="btn-copy" id="btn-copy">Copy issues</button>
+    <button class="btn-reset" id="btn-reset">Reset</button>
+  </div>
+  <p class="hint">Click checkbox once ✓ · again for N/A · again to clear · <strong>double-click item text to edit it</strong></p>
+  <div id="categories" style="margin-top:20px"></div>
+  <footer>Built from real CerealBox audit notes</footer>
+</div>
+
+<script>
+const CATEGORIES = [
+  { id:"tracking", label:"Tracking & Pixel", icon:"📡", color:"#E5383B", items:[
+    {id:"t1",text:"Pixel is firing correctly — no errors or underreporting"},
+    {id:"t2",text:"Meta reported conversions match actual donations (cross-check with CRM/FRU)"},
+    {id:"t3",text:"Conversion events are set up at ad set level and verified"},
+    {id:"t4",text:"ROAS bidding campaigns running — and only with proven winning creatives"},
+    {id:"t5",text:"Reels placement tested with winning creatives"},
+    {id:"t6",text:"Reporting is set up correctly — right metrics, right attribution window, right breakdown"},
+    {id:"t7",text:"Instagram account is connected to Facebook — confirm before running ads"},
+    {id:"t8",text:"International targeting reviewed — confirm geo settings are intentional (e.g. diaspora in UK/US vs local)"},
+    {id:"t9",text:"Diaspora/language-based targeting explored where relevant (e.g. Bengali speakers in UK, US, Europe)"},
+  ]},
+  { id:"qa", label:"Account QA & Setup", icon:"✅", color:"#2A7F62", items:[
+    {id:"qa1",text:"Test donation made to confirm payment processor is connected and working — do NOT spend budget before verifying this (e.g. Light of Aid spent £1k with Stripe disconnected)"},
+    {id:"qa2",text:"Website access confirmed — do we have login/backend access to build and publish landing pages for the client?"},
+    {id:"qa2b",text:"Client website reviewed — is it strong enough to send traffic directly? Check speed, mobile experience, and trust signals"},
+    {id:"qa3",text:"Ads running from founder's page OR whitelisting set up where the founder or a team member has an influential presence"},
+    {id:"qa4",text:"Insights from client's previous campaigns in the same time period reviewed — what worked, what didn't?"},
+    {id:"qa5",text:"Ad Library checked — are competitors currently running ads? Screenshot and study their best creatives and angles"},
+  ]},
+  { id:"campaigns", label:"Campaign Structure", icon:"🗂️", color:"#E76F00", items:[
+    {id:"c1",text:"Minimum 2 campaigns running — a single campaign is not acceptable"},
+    {id:"c1b",text:"Scaling campaign exists — all proven winners consolidated into one CBO campaign with a significant budget. If not, create it."},
+    {id:"c2",text:"Each ad is placed in the correct campaign (e.g. Zakat vs Noor)"},
+    {id:"c3",text:"All active ads are receiving meaningful spend — no creative left untested due to zero/micro budget"},
+    {id:"c4",text:"Campaign objectives align with current fundraising goals"},
+    {id:"c5",text:"Ad sets are not cannibalising each other (audience overlap check)"},
+    {id:"c6",text:"Creative volume scales with budget — higher spend accounts need proportionally more content"},
+    {id:"c7",text:"Account is not dependent on one winning video — risk of single-creative fatigue flagged"},
+    {id:"c8",text:"All available FB/Meta pages being utilised — not defaulting to just one"},
+  ]},
+  { id:"creative", label:"Ad Creative & Copy", icon:"🎨", color:"#0096C7", items:[
+    {id:"cr1",text:"Creative diversity covered — tick off each type: UGC ✓ Imam/scholar video ✓ Carousel ✓ Poster/static ✓ Ugly ad ✓ Experimental poster ✓ Traditional appeal ✓ Case study video ✓ Quran video ✓ | UK clients also: office filming ✓"},
+    {id:"cr2",text:"Every video has a hook in the first 1–3 seconds. A hook = a pattern interrupt that stops the scroll: bold statement, beneficiary in distress, direct question, or striking visual. NOT a logo, slow intro, or scene-setting shot."},
+    {id:"cr3",text:"Ad copy aligns with visuals — beneficiary shown matches the copy (e.g. don't say 'orphans' if the video shows adults)"},
+    {id:"cr4",text:"Creative visuals match the campaign season/theme (e.g. no sunny footage on a winter appeal)"},
+    {id:"cr5",text:"Headlines are active and positive — avoid passive/negative framing"},
+    {id:"cr6",text:"Full ad congruency: copy → video → landing page are consistent in message and tone"},
+    {id:"cr7",text:"Currency is correct and consistent across ad copy, video overlays, and landing page — matches target market (e.g. CAD for Canadian charity, not GBP)"},
+    {id:"cr8",text:"Every ad has a clear, specific CTA — not generic (e.g. '£5 provides an iftar', not just 'Donate now')"},
+    {id:"cr9",text:"Text overlays on video are readable — check colour contrast and font size"},
+    {id:"cr10",text:"Emotional gut check: watch every ad cold and ask — does this make me want to donate? Does it move me?"},
+    {id:"cr11",text:"All ads reviewed for brand safety — no disturbing or off-putting imagery that could alienate donors"},
+    {id:"cr12",text:"Price points mentioned explicitly in ad copy with a clear impact statement (e.g. '$50 = food pack for a family of 5')"},
+    {id:"cr13",text:"Islamic content present — multiple angles used, not just one Quran video"},
+    {id:"cr14",text:"Ad copy tailored to target community identity where relevant (cultural signals, language, shared references)"},
+    {id:"cr15",text:"Imagery is striking enough for the cause — medical and complex causes especially need strong, arresting visuals"},
+    {id:"cr16",text:"Beneficiary storytelling with VO explored — narrate the story with b-roll ('This is Fatima, and her story will shock you…')"},
+    {id:"cr17",text:"Founder is compelling on camera — founder direct-to-camera ad either exists or is being produced"},
+    {id:"cr18",text:"Imam or authority figure video explored (e.g. Madinah-style appeal)"},
+    {id:"cr19",text:"Influencer or trusted team member identified — ads running from their personal page explored"},
+    {id:"cr20",text:"Client's social media (IG, TikTok etc.) reviewed — decent content downloaded and flagged for repurposing"},
+    {id:"cr21",text:"If operating in-country: ground footage requested — ask Summayyah or local contact to film on Day 1"},
+    {id:"cr22",text:"UGC with contextual background imagery explored where direct client footage is scarce"},
+    {id:"cr23",text:"Correct client logo verified on all creatives before publishing — flag and fix repeat errors immediately"},
+    {id:"cr24",text:"UGC sourced from client: testimonials, personal stories, case studies"},
+    {id:"cr25",text:"Storytelling is account-specific — not generic narrative that could belong to any org"},
+    {id:"cr26",text:"Islam-angle campaign explored (e.g. 'sponsor a madrassa', 'make Islam accessible for SEN children')"},
+    {id:"cr27",text:"TikTok-style short videos reviewed for Meta adaptation"},
+  ]},
+  { id:"landingpage", label:"Landing Page (CP)", icon:"🖥️", color:"#2A9D5C", items:[
+    {id:"lp1",text:"Who/what/where/why is clear within the first 10 seconds of reading"},
+    {id:"lp2",text:"Fundraising purpose is stated early — don't make the reader scroll to find out what we're raising money for"},
+    {id:"lp3",text:"Proof points included — specific delivery stats (e.g. 'We've delivered 12,000 meals', 'Served 800 families since 2011'). Vague claims don't build trust."},
+    {id:"lp4",text:"LP format is unique — not the same structure, layout, or emoji pattern as other CPs. If it could swap to a different client without changing much, rewrite it."},
+    {id:"lp5",text:"LP messaging matches the campaign type — seasonal and thematic consistency"},
+    {id:"lp6",text:"Copy length fits campaign complexity — medical/education causes may need fuller explanation; food/iftar can be punchy"},
+    {id:"lp7",text:"Hero/banner image features a subject's face — ideally direct eye contact with the viewer to feel personal"},
+    {id:"lp8",text:"Hero/banner image is tangible — avoid 'solve world hunger' overwhelm; one person, one outcome"},
+    {id:"lp9",text:"Headline is instantly understood — read it cold: if your brain has to work, rewrite it"},
+    {id:"lp10",text:"Quran verse or hadith used is simple and widely understood — avoid obscure references"},
+    {id:"lp11",text:"Emotional hook connects logically to the ask — no guilt-tripping or forced comparisons"},
+    {id:"lp12",text:"LP benchmarked against a best-in-class example for clarity and conversion flow"},
+  ]},
+  { id:"donation", label:"Donation & Conversion", icon:"💰", color:"#C1567A", items:[
+    {id:"d1",text:"Price points are specific and impactful — each tier says what it does (e.g. '$50 = food pack for a family of 5 for Ramadan')"},
+    {id:"d2",text:"Price tiers are meaningfully distinct — not too similar (e.g. $40 vs $50 with no difference explained) and seasonally relevant"},
+    {id:"d3",text:"High anchor included (e.g. £5,000) to make mid-range amounts feel affordable by comparison"},
+    {id:"d4",text:"AOV tracked and worked on — flag if average donation is too low and propose a fix"},
+    {id:"d5",text:"First donation ask in ad copy is palatable — don't open with a large number"},
+    {id:"d6",text:"Donation form is friction-free — minimal steps, fast load, mobile optimised"},
+    {id:"d7",text:"Daily recurring donations feature enabled and being actively promoted — not just monthly"},
+    {id:"d8",text:"Template 3 Landing Page with Gift Catalog feature being used where applicable"},
+    {id:"d9",text:"FundraiseUp Designations set up correctly — mandatory for multi-country non-Template 3 Qurbani campaigns"},
+    {id:"d10",text:"Goal Meters on LP/CP reviewed — should be ON by default for all campaigns, but check if the meter needs updating. Exception: Frosties Bowl-style campaigns should have goal meters turned OFF fully."},
+  ]},
+  { id:"competitive", label:"Competitive Research", icon:"🔍", color:"#7B61D4", items:[
+    {id:"comp1",text:"Ad Library checked — competitors' live ads reviewed, best ones screenshotted and studied"},
+    {id:"comp2",text:"Top performers in the niche identified and reviewed (creative formats, copy angles, hooks)"},
+    {id:"comp3",text:"Key differentiators noted — what makes the best accounts stand out?"},
+    {id:"comp4",text:"Winning angles shortlisted for adaptation to this client"},
+    {id:"comp5",text:"Competitor landing pages reviewed for structural and copy inspiration"},
+  ]},
+  { id:"pipeline", label:"Content Pipeline", icon:"🎬", color:"#B07D00", items:[
+    {id:"cp1",text:"New content timeline confirmed with client"},
+    {id:"cp2",text:"Next content batch briefed with correct beneficiary representation"},
+    {id:"cp3",text:"Client briefed and confirmed for self-shooting UGC"},
+    {id:"cp4",text:"Content gaps identified for upcoming campaigns"},
+  ]},
+];
+
+// State
+const states = {}; // undefined | 'checked' | 'na'
+const itemTexts = {}; // overrides
+const openCats = {};
+CATEGORIES.forEach(c => { openCats[c.id] = true; });
+
+function getItemText(id) {
+  return itemTexts[id] !== undefined ? itemTexts[id] : CATEGORIES.flatMap(c=>c.items).find(i=>i.id===id).text;
+}
+
+function getAllItems() { return CATEGORIES.flatMap(c => c.items); }
+
+function updateProgress() {
+  const all = getAllItems();
+  const applicable = all.filter(i => states[i.id] !== 'na');
+  const checked = applicable.filter(i => states[i.id] === 'checked');
+  const naCount = all.filter(i => states[i.id] === 'na').length;
+  const pct = applicable.length === 0 ? 0 : Math.round(checked.length / applicable.length * 100);
+  document.getElementById('progress-fill').style.width = pct + '%';
+  const naStr = naCount > 0 ? ` · ${naCount} N/A` : '';
+  document.getElementById('progress-text').textContent = `${checked.length}/${applicable.length}${naStr} — ${pct}%`;
+}
+
+function updateCatProgress(cat) {
+  const applicable = cat.items.filter(i => states[i.id] !== 'na');
+  const done = applicable.filter(i => states[i.id] === 'checked').length;
+  const naCount = cat.items.filter(i => states[i.id] === 'na').length;
+  const pct = applicable.length === 0 ? 100 : Math.round(done / applicable.length * 100);
+  const allDone = done === applicable.length && applicable.length > 0;
+
+  const countEl = document.querySelector(`[data-cat="${cat.id}"] .cat-count`);
+  const barEl = document.querySelector(`[data-cat="${cat.id}"] .cat-mini-bar`);
+  const badgeEl = document.querySelector(`[data-cat="${cat.id}"] .na-badge`);
+
+  if (countEl) { countEl.textContent = `${done}/${applicable.length}`; countEl.classList.toggle('done', allDone); }
+  if (barEl) { barEl.style.width = pct + '%'; barEl.style.background = allDone ? '#2A9D5C' : cat.color; }
+  if (badgeEl) { badgeEl.textContent = `${naCount} N/A`; badgeEl.style.display = naCount > 0 ? '' : 'none'; }
+}
+
+function toggleItem(catId, itemId) {
+  const cur = states[itemId];
+  if (!cur) states[itemId] = 'checked';
+  else if (cur === 'checked') states[itemId] = 'na';
+  else delete states[itemId];
+
+  const itemEl = document.querySelector(`[data-item="${itemId}"]`);
+  if (itemEl) {
+    itemEl.classList.toggle('checked', states[itemId] === 'checked');
+    itemEl.classList.toggle('na', states[itemId] === 'na');
+    const cb = itemEl.querySelector('.checkbox');
+    cb.classList.toggle('checked', states[itemId] === 'checked');
+    cb.classList.toggle('na', states[itemId] === 'na');
+  }
+
+  const cat = CATEGORIES.find(c => c.id === catId);
+  updateCatProgress(cat);
+  updateProgress();
+}
+
+function startEdit(itemId, textEl, inputEl) {
+  textEl.classList.add('editing');
+  inputEl.classList.add('editing');
+  inputEl.value = getItemText(itemId);
+  inputEl.focus();
+  inputEl.select();
+}
+
+function commitEdit(itemId, textEl, inputEl) {
+  const val = inputEl.value.trim();
+  if (val) { itemTexts[itemId] = val; textEl.textContent = val; }
+  textEl.classList.remove('editing');
+  inputEl.classList.remove('editing');
+}
+
+function renderCategories() {
+  const container = document.getElementById('categories');
+  container.innerHTML = '';
+
+  CATEGORIES.forEach(cat => {
+    const applicable = cat.items.filter(i => states[i.id] !== 'na');
+    const done = applicable.filter(i => states[i.id] === 'checked').length;
+    const pct = applicable.length === 0 ? 100 : Math.round(done / applicable.length * 100);
+    const isOpen = openCats[cat.id];
+
+    const div = document.createElement('div');
+    div.className = 'category';
+    div.dataset.cat = cat.id;
+
+    // Header
+    const header = document.createElement('div');
+    header.className = 'cat-header' + (isOpen ? '' : ' collapsed');
+    header.innerHTML = `
+      <div class="cat-left">
+        <span class="cat-icon" style="background:${cat.color}12;border:1px solid ${cat.color}28">${cat.icon}</span>
+        <span class="cat-label">${cat.label}</span>
+        <span class="na-badge" style="display:none">0 N/A</span>
+      </div>
+      <div class="cat-right">
+        <span class="cat-count">${done}/${applicable.length}</span>
+        <div class="cat-mini-bar-wrap"><div class="cat-mini-bar" style="width:${pct}%;background:${cat.color}"></div></div>
+        <svg class="chevron${isOpen?' open':''}" width="15" height="15" viewBox="0 0 16 16" fill="none">
+          <path d="M4 6l4 4 4-4" stroke="#333" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+        </svg>
+      </div>`;
+    header.addEventListener('click', () => {
+      openCats[cat.id] = !openCats[cat.id];
+      header.classList.toggle('collapsed', !openCats[cat.id]);
+      header.querySelector('.chevron').classList.toggle('open', openCats[cat.id]);
+      itemsWrap.style.display = openCats[cat.id] ? '' : 'none';
+    });
+    div.appendChild(header);
+
+    // Items
+    const itemsWrap = document.createElement('div');
+    itemsWrap.className = 'items-wrap';
+    itemsWrap.style.display = isOpen ? '' : 'none';
+
+    cat.items.forEach((item, idx) => {
+      const itemDiv = document.createElement('div');
+      itemDiv.className = 'item';
+      itemDiv.dataset.item = item.id;
+
+      const cb = document.createElement('div');
+      cb.className = 'checkbox';
+      cb.title = 'Click to check';
+      cb.innerHTML = `<svg width="11" height="8" viewBox="0 0 11 8" fill="none"><path d="M1 3.5L4 6.5L10 1" stroke="white" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg><span class="na-text">N/A</span>`;
+      cb.addEventListener('click', () => toggleItem(cat.id, item.id));
+
+      const numEl = document.createElement('span');
+      numEl.className = 'item-num';
+      numEl.textContent = (idx + 1) + '.';
+
+      const textEl = document.createElement('span');
+      textEl.className = 'item-text';
+      textEl.textContent = item.text;
+      textEl.title = 'Double-click to edit';
+
+      const inputEl = document.createElement('textarea');
+      inputEl.className = 'item-input';
+      inputEl.rows = 2;
+
+      textEl.addEventListener('dblclick', () => startEdit(item.id, textEl, inputEl));
+      inputEl.addEventListener('blur', () => commitEdit(item.id, textEl, inputEl));
+      inputEl.addEventListener('keydown', e => {
+        if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); commitEdit(item.id, textEl, inputEl); }
+        if (e.key === 'Escape') { inputEl.value = getItemText(item.id); textEl.classList.remove('editing'); inputEl.classList.remove('editing'); }
+      });
+
+      itemDiv.appendChild(cb);
+      itemDiv.appendChild(numEl);
+      itemDiv.appendChild(textEl);
+      itemDiv.appendChild(inputEl);
+      itemsWrap.appendChild(itemDiv);
+    });
+
+    div.appendChild(itemsWrap);
+    container.appendChild(div);
+  });
+}
+
+// Copy checked items
+document.getElementById('btn-copy').addEventListener('click', function() {
+  const clientName = document.getElementById('client-name').value || 'Client';
+  const date = new Date().toLocaleDateString('en-GB', { day:'numeric', month:'long', year:'numeric' });
+  const lines = [`CHARITY AD ACCOUNT AUDIT — ${clientName}`, date, ''];
+  let hasChecked = false;
+
+  CATEGORIES.forEach(cat => {
+    const checked = cat.items.filter(i => states[i.id] === 'checked');
+    if (checked.length === 0) return;
+    hasChecked = true;
+    lines.push(`${cat.icon}  ${cat.label.toUpperCase()}`);
+    checked.forEach(i => lines.push(`   • ${getItemText(i.id)}`));
+    lines.push('');
+  });
+
+  if (!hasChecked) lines.push('No items checked yet.');
+
+  const text = lines.join('\n');
+  const btn = this;
+
+  // Try modern clipboard API first, fallback to execCommand
+  if (navigator.clipboard && navigator.clipboard.writeText) {
+    navigator.clipboard.writeText(text).then(() => {
+      btn.textContent = 'Copied ✓'; btn.classList.add('copied');
+      setTimeout(() => { btn.textContent = 'Copy issues'; btn.classList.remove('copied'); }, 2200);
+    }).catch(() => fallbackCopy(text, btn));
+  } else {
+    fallbackCopy(text, btn);
+  }
+});
+
+function fallbackCopy(text, btn) {
+  const el = document.createElement('textarea');
+  el.value = text;
+  el.style.cssText = 'position:fixed;top:0;left:0;opacity:0;';
+  document.body.appendChild(el);
+  el.focus(); el.select();
+  try { document.execCommand('copy'); btn.textContent = 'Copied ✓'; btn.classList.add('copied'); }
+  catch { btn.textContent = 'Failed'; }
+  document.body.removeChild(el);
+  setTimeout(() => { btn.textContent = 'Copy issues'; btn.classList.remove('copied'); }, 2200);
+}
+
+// Reset
+document.getElementById('btn-reset').addEventListener('click', () => {
+  Object.keys(states).forEach(k => delete states[k]);
+  document.querySelectorAll('.item').forEach(el => { el.classList.remove('checked','na'); });
+  document.querySelectorAll('.checkbox').forEach(el => { el.classList.remove('checked','na'); });
+  CATEGORIES.forEach(cat => updateCatProgress(cat));
+  updateProgress();
+});
+
+// Init
+renderCategories();
+updateProgress();
+</script>
+</body>
+</html>
